@@ -119,12 +119,13 @@ void charybdis_set_pointer_sniping_enabled(bool enable);
 bool charybdis_get_pointer_dragscroll_enabled(void);
 
 /**
- * \brief Enable/disable drag-scroll mode.
+ * \brief Set the manual drag-scroll request (combined with the layer request).
  *
  * When drag-scroll mode is enabled, horizontal and vertical pointer movements
  * are translated into horizontal and vertical scroll movements.
  */
 void charybdis_set_pointer_dragscroll_enabled(bool enable);
+void charybdis_set_pointer_layer_dragscroll_enabled(bool enable);
 void trackball_oled_info(void);
 void trackball_oled_default(void);
 #endif // POINTING_DEVICE_ENABLE

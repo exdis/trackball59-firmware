@@ -94,6 +94,9 @@
         }
     ],
     "layouts": {
+        "labels": [
+            ["Drag-scroll layer", "Off", "Layer 1", "Layer 2", "Layer 3", "Layer 4", "Layer 5", "Layer 6", "Layer 7", "Layer 8", "Layer 9"]
+        ],
         "keymap":[
   [
     {
@@ -381,4 +384,3 @@
 ]
     }
 }
-

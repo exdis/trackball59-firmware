@@ -29,7 +29,7 @@ RGB_MATRIX_ENABLE = yes     # Enable keyboard RGB matrix functionality
 SPLIT_KEYBOARD = yes
 
 POINTING_DEVICE_ENABLE = yes # Enable trackball
-# POINTING_DEVICE_DRIVER = pmw3360
-POINTING_DEVICE_DRIVER = pmw3389
+# Match the PMW3360 register/CPI behavior found in the original firmware backup.
+POINTING_DEVICE_DRIVER = pmw3360
 
 SERIAL_DRIVER = vendor

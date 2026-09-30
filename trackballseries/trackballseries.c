@@ -37,6 +37,10 @@ typedef union {
 } charybdis_config_t;
 
 static charybdis_config_t g_charybdis_config = {0};
+static bool manual_dragscroll_enabled;
+static bool layer_dragscroll_enabled;
+static int16_t scroll_buffer_x;
+static int16_t scroll_buffer_y;
 //static charybdis_config_t g_charybdis_config;
 
 
@@ -141,9 +145,24 @@ bool charybdis_get_pointer_dragscroll_enabled(void) {
     return g_charybdis_config.is_dragscroll_enabled;
 }
 
-void charybdis_set_pointer_dragscroll_enabled(bool enable) {
+static void update_dragscroll_enabled(void) {
+    bool enable = manual_dragscroll_enabled || layer_dragscroll_enabled;
+    if (g_charybdis_config.is_dragscroll_enabled == enable) {
+        return;
+    }
     g_charybdis_config.is_dragscroll_enabled = enable;
+    scroll_buffer_x = scroll_buffer_y = 0;
     maybe_update_pointing_device_cpi(&g_charybdis_config);
+}
+
+void charybdis_set_pointer_dragscroll_enabled(bool enable) {
+    manual_dragscroll_enabled = enable;
+    update_dragscroll_enabled();
+}
+
+void charybdis_set_pointer_layer_dragscroll_enabled(bool enable) {
+    layer_dragscroll_enabled = enable;
+    update_dragscroll_enabled();
 }
 
 void charybdis_cycle_pointer_sniping_dpi_noeeprom(bool forward) {
@@ -155,8 +174,6 @@ void charybdis_cycle_pointer_sniping_dpi_noeeprom(bool forward) {
  * Implement drag-scroll.
  */
 static void pointing_device_task_charybdis(report_mouse_t* mouse_report) {
-    static int16_t scroll_buffer_x = 0;
-    static int16_t scroll_buffer_y = 0;
     if (g_charybdis_config.is_dragscroll_enabled) {
     #ifdef CHARYBDIS_DRAGSCROLL_REVERSE_X
         scroll_buffer_x -= mouse_report->x;
@@ -302,7 +319,7 @@ bool process_record_kb(uint16_t keycode, keyrecord_t* record) {
             break;
         case DRAGSCROLL_MODE_TOGGLE:
             if (record->event.pressed) {
-                charybdis_set_pointer_dragscroll_enabled(!charybdis_get_pointer_dragscroll_enabled());
+                charybdis_set_pointer_dragscroll_enabled(!manual_dragscroll_enabled);
             }
             break;
 
@@ -316,6 +333,8 @@ bool process_record_kb(uint16_t keycode, keyrecord_t* record) {
 }
 
 void eeconfig_init_kb(void) {
+    manual_dragscroll_enabled = layer_dragscroll_enabled = false;
+    scroll_buffer_x = scroll_buffer_y = 0;
     g_charybdis_config.raw = 0;
     write_charybdis_config_to_eeprom(&g_charybdis_config);
     maybe_update_pointing_device_cpi(&g_charybdis_config);
@@ -323,6 +342,8 @@ void eeconfig_init_kb(void) {
 }
 
 void matrix_init_kb(void) {
+    manual_dragscroll_enabled = layer_dragscroll_enabled = false;
+    scroll_buffer_x = scroll_buffer_y = 0;
     read_charybdis_config_from_eeprom(&g_charybdis_config);
     matrix_init_user();
 }
@@ -428,5 +449,4 @@ void trackball_oled_info(void) {
     oled_write_ln(count_dragscroll_str, false);
 
     }
-
 

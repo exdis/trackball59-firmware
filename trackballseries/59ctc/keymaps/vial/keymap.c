@@ -1,5 +1,31 @@
 
 #include QMK_KEYBOARD_H
+#include "via.h"
+#include "language_shift.h"
+
+#ifdef POINTING_DEVICE_ENABLE
+static uint8_t dragscroll_layer;
+static bool dragscroll_layer_ready;
+
+static void update_dragscroll_layer(layer_state_t state) {
+    if (dragscroll_layer_ready && is_keyboard_master()) {
+        charybdis_set_pointer_layer_dragscroll_enabled(
+            dragscroll_layer != 0 && layer_state_cmp(state, dragscroll_layer));
+    }
+}
+
+void via_set_layout_options_kb(uint32_t value) {
+    // The single dropdown uses four bits of the existing layout-options byte.
+    uint8_t selected = value & 0x0f;
+    dragscroll_layer = selected < DYNAMIC_KEYMAP_LAYER_COUNT ? selected : 0;
+    update_dragscroll_layer(layer_state | default_layer_state);
+}
+
+layer_state_t default_layer_state_set_user(layer_state_t state) {
+    update_dragscroll_layer(layer_state | state);
+    return state;
+}
+#endif
 
 #ifdef CHARYBDIS_AUTO_POINTER_LAYER_TRIGGER_ENABLE
 #    include "timer.h"
@@ -54,6 +80,11 @@ static auto_config_t user_config;
 
 void keyboard_post_init_user(void){
     user_config.raw1 = eeconfig_read_user();
+#ifdef POINTING_DEVICE_ENABLE
+    // VIA loads options before the pointing device is initialized.
+    dragscroll_layer_ready = true;
+    via_set_layout_options_kb(via_get_layout_options());
+#endif
 }
 
 void eeconfig_init_user(void){
@@ -273,6 +304,7 @@ void matrix_scan_user(void) {
 #ifdef CHARYBDIS_AUTO_SNIPING_ON_LAYER
 layer_state_t layer_state_set_user(layer_state_t state) {
     charybdis_set_pointer_sniping_enabled(layer_state_cmp(state, CHARYBDIS_AUTO_SNIPING_ON_LAYER));
+    update_dragscroll_layer(state | default_layer_state);
     return state;
 }
 #    endif // CHARYBDIS_AUTO_SNIPING_ON_LAYER
@@ -286,6 +318,9 @@ void rgb_matrix_update_pwm_buffers(void);
 
 //自定义键值
 bool process_record_user(uint16_t keycode, keyrecord_t* record) {
+    if (!process_language_shift(keycode, record)) {
+        return false;
+    }
     switch (keycode) {
         // toggle auto mouse enable key
         case AUTO_MODE_TOGGLE:
